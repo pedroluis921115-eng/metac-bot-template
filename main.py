@@ -725,7 +725,6 @@ if __name__ == "__main__":
             template_bot.forecast_on_tournament(
                 client.CURRENT_METACULUS_CUP_ID, return_exceptions=True
             )
-        )
         elif run_mode == "test_questions":
         # Minimal smoke test: forecast exactly one question from the bot testing area.
         template_bot.skip_previously_forecasted_questions = False
