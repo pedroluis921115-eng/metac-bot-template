@@ -667,28 +667,28 @@ if __name__ == "__main__":
     publish_to_metaculus = True
     print_startup_banner(run_mode, will_publish=publish_to_metaculus)
 
-    # Configure the bot. The `llms=` block below is commented out to use
-    # whichever default models forecasting-tools picks based on your env vars;
-    # uncomment and edit to pin specific models.
+       # Smoke-test configuration: pin a current OpenRouter model explicitly.
+    smoke_test_model = GeneralLlm(
+        model="openrouter/google/gemma-4-26b-a4b-it:free",
+        temperature=0.2,
+        timeout=90,
+        allowed_tries=2,
+    )
+
     template_bot = SummerTemplateBot2026(
         research_reports_per_question=1,
-        predictions_per_research_report=5,
+        predictions_per_research_report=1,
         use_research_summary_to_forecast=False,
         publish_reports_to_metaculus=publish_to_metaculus,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
         extra_metadata_in_explanation=True,
-        # llms={
-        #     "default": GeneralLlm(
-        #         model="openrouter/openai/gpt-4o",
-        #         temperature=0.3,
-        #         timeout=40,
-        #         allowed_tries=2,
-        #     ),
-        #     "summarizer": "openai/gpt-4o-mini",
-        #     "researcher": "asknews/news-summaries",
-        #     "parser": "openai/gpt-4o-mini",
-        # },
+        llms={
+            "default": smoke_test_model,
+            "summarizer": smoke_test_model,
+            "researcher": smoke_test_model,
+            "parser": smoke_test_model,
+        },
     )
 
     # Per-mode tournament URL shown in the summary banner footer. These
