@@ -127,7 +127,7 @@ class SummerTemplateBot2026(ForecastBot):
         1  # Set this to whatever works for your search-provider/ai-model rate limits
     )
     _concurrency_limiter = asyncio.Semaphore(_max_concurrent_questions)
-    _structure_output_validation_samples = 2
+    _structure_output_validation_samples = 1
 
     ##################################### RESEARCH #####################################
 
@@ -667,28 +667,28 @@ if __name__ == "__main__":
     publish_to_metaculus = True
     print_startup_banner(run_mode, will_publish=publish_to_metaculus)
 
-    # Configure the bot. The `llms=` block below is commented out to use
-    # whichever default models forecasting-tools picks based on your env vars;
-    # uncomment and edit to pin specific models.
+       # Smoke-test configuration: pin a current OpenRouter model explicitly.
+    smoke_test_model = GeneralLlm(
+        model="openrouter/google/gemma-4-26b-a4b-it:free",
+        temperature=0.2,
+        timeout=90,
+        allowed_tries=2,
+    )
+
     template_bot = SummerTemplateBot2026(
         research_reports_per_question=1,
-        predictions_per_research_report=5,
+        predictions_per_research_report=1,
         use_research_summary_to_forecast=False,
         publish_reports_to_metaculus=publish_to_metaculus,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
         extra_metadata_in_explanation=True,
-        # llms={
-        #     "default": GeneralLlm(
-        #         model="openrouter/openai/gpt-4o",
-        #         temperature=0.3,
-        #         timeout=40,
-        #         allowed_tries=2,
-        #     ),
-        #     "summarizer": "openai/gpt-4o-mini",
-        #     "researcher": "asknews/news-summaries",
-        #     "parser": "openai/gpt-4o-mini",
-        # },
+        llms={
+            "default": smoke_test_model,
+            "summarizer": smoke_test_model,
+            "researcher": "no_research",
+            "parser": smoke_test_model,
+        },
     )
 
     # Per-mode tournament URL shown in the summary banner footer. These
@@ -725,16 +725,14 @@ if __name__ == "__main__":
             template_bot.forecast_on_tournament(
                 client.CURRENT_METACULUS_CUP_ID, return_exceptions=True
             )
-        )
-    elif run_mode == "test_questions":
-        # The bot-testing-area tournament contains all question types and is
-        # the recommended target for smoke-testing your bot.
-        # https://www.metaculus.com/tournament/bot-testing-area/
+        elif run_mode == "test_questions":
+        # Minimal smoke test: forecast exactly one question from the bot testing area.
         template_bot.skip_previously_forecasted_questions = False
+        question = client.get_question_by_url(
+            "https://www.metaculus.com/questions/43321/"
+        )
         forecast_reports = asyncio.run(
-            template_bot.forecast_on_tournament(
-                "bot-testing-area", return_exceptions=True
-            )
+            template_bot.forecast_questions([question], return_exceptions=True)
         )
 
     template_bot.log_report_summary(forecast_reports)
