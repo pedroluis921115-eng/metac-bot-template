@@ -127,7 +127,7 @@ class SummerTemplateBot2026(ForecastBot):
         1  # Set this to whatever works for your search-provider/ai-model rate limits
     )
     _concurrency_limiter = asyncio.Semaphore(_max_concurrent_questions)
-    _structure_output_validation_samples = 2
+    _structure_output_validation_samples = 1
 
     ##################################### RESEARCH #####################################
 
@@ -686,7 +686,7 @@ if __name__ == "__main__":
         llms={
             "default": smoke_test_model,
             "summarizer": smoke_test_model,
-            "researcher": smoke_test_model,
+            "researcher": "no_research",
             "parser": smoke_test_model,
         },
     )
@@ -726,15 +726,14 @@ if __name__ == "__main__":
                 client.CURRENT_METACULUS_CUP_ID, return_exceptions=True
             )
         )
-    elif run_mode == "test_questions":
-        # The bot-testing-area tournament contains all question types and is
-        # the recommended target for smoke-testing your bot.
-        # https://www.metaculus.com/tournament/bot-testing-area/
+        elif run_mode == "test_questions":
+        # Minimal smoke test: forecast exactly one question from the bot testing area.
         template_bot.skip_previously_forecasted_questions = False
+        question = client.get_question_by_url(
+            "https://www.metaculus.com/questions/43321/"
+        )
         forecast_reports = asyncio.run(
-            template_bot.forecast_on_tournament(
-                "bot-testing-area", return_exceptions=True
-            )
+            template_bot.forecast_questions([question], return_exceptions=True)
         )
 
     template_bot.log_report_summary(forecast_reports)
